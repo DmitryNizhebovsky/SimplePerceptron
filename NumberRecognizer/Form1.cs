@@ -10,12 +10,12 @@ namespace NumberRecognizer
     public partial class MainForm : Form
     {
         private bool onDraw;
-        private List<Point> points;
+        private readonly List<Point> points;
         private Point lastLocation;
         private SolidBrush currentBrush;
-        private Pen currentPen;
-        private Bitmap canvas;
-        private Graphics gdi;
+        private readonly Pen currentPen;
+        private readonly Bitmap canvas;
+        private readonly Graphics gdi;
 
         public MainForm()
         {
@@ -56,14 +56,27 @@ namespace NumberRecognizer
 
                     for (int i = 0; i < points.Count; ++i)
                     {
-                        points[i] = new Point((int)(points[i].X + offset.X), (int)(points[i].Y + offset.Y));
+                        var newX = (int)(points[i].X + offset.X);
+                        var newY = (int)(points[i].Y + offset.Y);
+                        points[i] = new Point(newX, newY);
                     }
 
                     graphics.Clear(Color.White);
                     graphics.DrawLines(currentPen, points.ToArray());
 
                     var tmp = ResizeImage(bmp, 28, 28);
-                    tmp.Save("C:\\Users\\dimni\\Desktop\\img.png", ImageFormat.Png);
+                    var pixels = new List<float>();
+
+                    for (var y = 0; y < tmp.Height; ++y)
+                    {
+                        for (var x = 0; x < tmp.Width; ++x)
+                        {
+                            var pixelColor = tmp.GetPixel(x, y);
+                            var pixelGrey = (pixelColor.R + pixelColor.G + pixelColor.B) / 3F;
+                            pixelGrey = (((255F - pixelGrey) / 255F) * 0.99F) + 0.01F;
+                            pixels.Add(pixelGrey);
+                        }
+                    }
                 }
             }   
         }
@@ -85,12 +98,11 @@ namespace NumberRecognizer
 
         private void Canvas_MouseMove(object sender, MouseEventArgs e)
         {
-            if (onDraw)
-            {
-                points.Add(e.Location);
-                gdi.DrawLines(currentPen, points.ToArray());
-                Canvas.Image = canvas;
-            }
+            if (!onDraw) return;
+
+            points.Add(e.Location);
+            gdi.DrawLines(currentPen, points.ToArray());
+            Canvas.Image = canvas;
         }
 
         private void Canvas_MouseUp(object sender, MouseEventArgs e)
@@ -103,7 +115,7 @@ namespace NumberRecognizer
             currentPen.Width = (float)((NumericUpDown)sender).Value;
         }
 
-        private static Bitmap ResizeImage(Bitmap image, int width, int height)
+        private static Bitmap ResizeImage(Image image, int width, int height)
         {
             var destRect = new Rectangle(0, 0, width, height);
             var destImage = new Bitmap(width, height);
