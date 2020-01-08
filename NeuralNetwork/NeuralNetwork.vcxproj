@@ -122,6 +122,7 @@
     <ClInclude Include="math\functions.h" />
     <ClInclude Include="math\matrix.h" />
     <ClInclude Include="ml\perceptron.h" />
+    <ClInclude Include="utils\binary.h" />
     <ClInclude Include="utils\logger.h" />
     <ClInclude Include="utils\mat_iterator.h" />
     <ClInclude Include="utils\mnist\mnist.h" />

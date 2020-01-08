@@ -8,6 +8,7 @@
 
 #include "..\math\matrix.h"
 #include "..\math\functions.h"
+#include "..\utils\binary.h"
 
 namespace ml
 {
@@ -72,6 +73,68 @@ namespace ml
             }
 
             return input;
+        }
+
+        void save(const std::string& fileName)
+        {
+            std::ofstream outFile(fileName, std::ios::binary | std::ios::out);
+
+            if (!outFile.is_open())
+            {
+                std::cout << "file " << fileName << " can't to open\n";
+                return;
+            }
+
+            write_data(learning_rate, outFile);
+            write_data(layers.size(), outFile);
+
+            for (const auto& layer : layers)
+            {
+                write_data(layer.size_m(), outFile);
+                write_data(layer.size_n(), outFile);
+
+                for (auto it = layer.cbegin(); it != layer.cend(); ++it)
+                {
+                    write_data(*it, outFile);
+                }
+            }
+
+            outFile.close();
+        }
+
+        void load(const std::string& fileName)
+        {
+            std::ifstream inFile(fileName, std::ios::binary | std::ios::in);
+
+            if (!inFile.is_open())
+            {
+                std::cout << "file " << fileName << " can't to open\n";
+                return;
+            }
+
+            layers.clear();
+
+            learning_rate = read_data<float>(inFile);
+            const size_t layersNum = read_data<size_t>(inFile);
+            size_t size_m = 0;
+            size_t size_n = 0;
+            std::vector<float> data;
+
+            for (size_t layerNum = 0; layerNum < layersNum; ++layerNum)
+            {
+                size_m = read_data<size_t>(inFile);
+                size_n = read_data<size_t>(inFile);
+                const size_t data_length = size_m * size_n;
+
+                data.clear();
+                data.shrink_to_fit();
+                data.reserve(data_length);
+                data.resize(data_length);
+
+                inFile.read(reinterpret_cast<char*>(data.data()), data_length);
+            }
+
+            layers.emplace_back(size_m, size_n, data);
         }
 
     private:

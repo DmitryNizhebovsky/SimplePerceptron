@@ -23,7 +23,7 @@ constexpr char test_labels[] = "D:\\test_labels.idx";
 
 int main(int argc, char* argv[])
 {
-    ml::perceptron neural_network({ 784, 150, 10 }, 0.2);
+    ml::perceptron neural_network({ 784, 150, 10 }, 0.2f);
 
     auto mnist_training_set = ml::mnist::load_mnist_db(train_images, train_labels);
     auto mnist_test_set = ml::mnist::load_mnist_db(test_images, test_labels);

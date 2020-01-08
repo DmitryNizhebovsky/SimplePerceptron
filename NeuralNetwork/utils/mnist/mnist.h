@@ -6,6 +6,7 @@
 #include <optional>
 
 #include "..\logger.h"
+#include "..\binary.h"
 
 namespace ml
 {
@@ -13,28 +14,6 @@ namespace ml
     {
         using byte = char;
         using training_set = std::vector<std::pair<byte, std::vector<byte>>>;
-
-        inline uint32_t swap_endian(uint32_t val) noexcept
-        {
-            val = ((val << 8) & 0xFF00FF00) | ((val >> 8) & 0xFF00FF);
-            return (val << 16) | (val >> 16);
-        }
-
-        template<typename T, typename File>
-        inline T read_data_swap_endian(File& file)
-        {
-            T temp;
-            file.read(reinterpret_cast<char*>(&temp), sizeof(T));
-            return static_cast<T>(swap_endian(static_cast<uint32_t>(temp)));
-        }
-
-        template<typename T, typename File>
-        inline T read_data(File& file)
-        {
-            T temp;
-            file.read(reinterpret_cast<char*>(&temp), sizeof(T));
-            return temp;
-        }
 
         std::optional<training_set> load_mnist_db(const std::string& image_file, const std::string& label_file)
         {
@@ -85,9 +64,19 @@ namespace ml
             image_number = read_data_swap_endian<int>(images_in);
             label_number = read_data_swap_endian<int>(labels_in);
 
+            if (image_number < 0)
+            {
+                ml::utils::Logger::Error("mnist", "number of images must be positive\n");
+            }
+
+            if (label_number < 0)
+            {
+                ml::utils::Logger::Error("mnist", "number of labels must be positive\n");
+            }
+
             if (image_number != label_number)
             {
-                ml::utils::Logger::Error("mnist", "the number of labels and images does not match\n");
+                ml::utils::Logger::Error("mnist", "number of images and labels must match\n");
             }
 
             image_height = read_data_swap_endian<int>(images_in);
@@ -105,7 +94,7 @@ namespace ml
 
             auto start = std::chrono::high_resolution_clock::now();
 
-            for (size_t i = 0; i < label_number; ++i)
+            for (size_t i = 0; i < static_cast<size_t>(label_number); ++i)
             {
                 byte label = read_data<byte>(labels_in);
 
