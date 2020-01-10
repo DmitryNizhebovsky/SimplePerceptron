@@ -11,6 +11,7 @@ namespace NumberRecognizer
     {
         private bool onDraw;
         private readonly List<Point> points;
+        private readonly List<List<Point>> lines;
         private Point lastLocation;
         private SolidBrush currentBrush;
         private readonly Pen currentPen;
@@ -32,6 +33,7 @@ namespace NumberRecognizer
             };
             onDraw = false;
             points = new List<Point>();
+            lines = new List<List<Point>>();
         }
 
         private void RecognizeBtn_Click(object sender, EventArgs e)
@@ -41,28 +43,41 @@ namespace NumberRecognizer
                 using (var graphics = Graphics.FromImage(bmp))
                 {
                     PointF centerOfMass = new PointF(0F, 0F);
+                    var pointsCount = 0;
 
-                    foreach (var point in points)
+                    foreach (var line in lines)
                     {
-                        centerOfMass.X += point.X;
-                        centerOfMass.Y += point.Y;
+                        foreach (var point in line)
+                        {
+                            centerOfMass.X += point.X;
+                            centerOfMass.Y += point.Y;
+                        }
+
+                        pointsCount += line.Count;
                     }
 
-                    centerOfMass.X /= points.Count;
-                    centerOfMass.Y /= points.Count;
+                    centerOfMass.X /= pointsCount;
+                    centerOfMass.Y /= pointsCount;
 
                     var center = new PointF(canvas.Width / 2F, canvas.Height / 2F);
                     var offset = new PointF(center.X - centerOfMass.X, center.Y - centerOfMass.Y);
 
-                    for (int i = 0; i < points.Count; ++i)
+                    foreach (var line in lines)
                     {
-                        var newX = (int)(points[i].X + offset.X);
-                        var newY = (int)(points[i].Y + offset.Y);
-                        points[i] = new Point(newX, newY);
+                        for (int i = 0; i < line.Count; ++i)
+                        {
+                            var newX = (int)(line[i].X + offset.X);
+                            var newY = (int)(line[i].Y + offset.Y);
+                            line[i] = new Point(newX, newY);
+                        }
                     }
 
                     graphics.Clear(Color.White);
-                    graphics.DrawLines(currentPen, points.ToArray());
+
+                    foreach (var line in lines)
+                    {
+                        graphics.DrawLines(currentPen, line.ToArray());
+                    }
 
                     var tmp = ResizeImage(bmp, 28, 28);
                     var pixels = new List<float>();
@@ -83,16 +98,16 @@ namespace NumberRecognizer
 
         private void ClearBtn_Click(object sender, EventArgs e)
         {
-            gdi.Clear(Color.White);
             points.Clear();
+            lines.Clear();
+
+            gdi.Clear(Color.White);
             Canvas.Image = canvas;
         }
 
         private void Canvas_MouseDown(object sender, MouseEventArgs e)
         {
             onDraw = true;
-            gdi.Clear(Color.White);
-            Canvas.Image = canvas;
             points.Add(e.Location);
         }
 
@@ -101,13 +116,22 @@ namespace NumberRecognizer
             if (!onDraw) return;
 
             points.Add(e.Location);
+
+            foreach (var line in lines)
+            {
+                gdi.DrawLines(currentPen, line.ToArray());
+            }
+
             gdi.DrawLines(currentPen, points.ToArray());
+
             Canvas.Image = canvas;
         }
 
         private void Canvas_MouseUp(object sender, MouseEventArgs e)
         {
             onDraw = false;
+            lines.Add(new List<Point>(points));
+            points.Clear();
         }
 
         private void PenThicknessNumber_ValueChanged(object sender, EventArgs e)
