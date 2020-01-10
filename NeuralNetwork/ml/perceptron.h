@@ -131,10 +131,10 @@ namespace ml
                 data.reserve(data_length);
                 data.resize(data_length);
 
-                inFile.read(reinterpret_cast<char*>(data.data()), data_length);
-            }
+                inFile.read(reinterpret_cast<char*>(data.data()), data.size() * sizeof(float));
 
-            layers.emplace_back(size_m, size_n, data);
+                layers.emplace_back(size_m, size_n, data);
+            }
         }
 
     private:
