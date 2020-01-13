@@ -3,7 +3,9 @@
 #include <vector>
 #include <stack>
 #include <random>
+#include <iostream>
 #include <math.h>
+#include <fstream>
 #include <initializer_list>
 
 #include "..\math\matrix.h"
@@ -135,6 +137,8 @@ namespace ml
 
                 layers.emplace_back(size_m, size_n, data);
             }
+
+            inFile.close();
         }
 
     private:
