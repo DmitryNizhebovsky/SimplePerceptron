@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Windows.Forms;
+using MlWrapper;
 
 namespace NumberRecognizer
 {
@@ -18,22 +20,28 @@ namespace NumberRecognizer
         private readonly Bitmap canvas;
         private readonly Graphics gdi;
 
+        private Perceptron perceptron;
+
         public MainForm()
         {
             InitializeComponent();
             canvas = new Bitmap(Canvas.ClientSize.Width, Canvas.ClientSize.Height);
             gdi = Graphics.FromImage(canvas);
             gdi.SmoothingMode = SmoothingMode.HighQuality;
-            lastLocation = new Point(0, 0);
+            
             currentBrush = new SolidBrush(Color.Black);
-            currentPen = new Pen(currentBrush, 5)
+            currentPen = new Pen(currentBrush)
             {
+                Width = (float)PenThicknessNumber.Value,
                 EndCap = LineCap.Round,
                 StartCap = LineCap.Round
             };
+
             onDraw = false;
+            lastLocation = new Point(0, 0);
             points = new List<Point>();
             lines = new List<List<Point>>();
+            perceptron = new Perceptron();
         }
 
         private void RecognizeBtn_Click(object sender, EventArgs e)
@@ -92,6 +100,9 @@ namespace NumberRecognizer
                             pixels.Add(pixelGrey);
                         }
                     }
+
+                    var answer = perceptron.Forward(pixels);
+                    OutputLabel.Text = $"With a probability of {(answer.First * 100):0.#}% this is the number {answer.Second}";
                 }
             }   
         }
@@ -162,6 +173,26 @@ namespace NumberRecognizer
             }
 
             return destImage;
+        }
+
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            var tempFolder = Path.GetTempPath();
+            var modelFileName = "model.bin";
+            var fullPath = Path.Combine(tempFolder, modelFileName);
+
+            if (!File.Exists(fullPath))
+            {
+                using (Stream input = new MemoryStream(Properties.Resources.model))
+                {
+                    using (Stream output = File.Create(fullPath))
+                    {
+                        input.CopyTo(output);
+                    }
+                }
+            }
+
+            perceptron.Load(fullPath);
         }
     }
 }
