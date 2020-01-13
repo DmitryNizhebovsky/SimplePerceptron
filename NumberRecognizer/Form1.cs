@@ -130,6 +130,7 @@ namespace NumberRecognizer
 
             foreach (var line in lines)
             {
+                if (line.Count < 2) break;
                 gdi.DrawLines(currentPen, line.ToArray());
             }
 
